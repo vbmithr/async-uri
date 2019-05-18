@@ -7,6 +7,9 @@ let is_tls_url url = match Uri.scheme url with
   | Some "wss" -> true
   | _ -> false
 
+let ssl_cleanup conn _flushed =
+  Ssl.Connection.close conn
+
 let ssl_connect r w =
   let net_to_ssl, net_to_ssl_w = Pipe.create () in
   let ssl_to_net_r, ssl_to_net = Pipe.create () in
@@ -20,14 +23,40 @@ let ssl_connect r w =
     Reader.of_pipe (Info.createf "ssl_r") client_r >>= fun client_r ->
     Writer.of_pipe (Info.createf "ssl_w") client_w >>=
     fun (client_w, `Closed_and_flushed_downstream flushed) ->
+    don't_wait_for begin
+      Deferred.all_unit [ Reader.close_finished client_r ;
+                          Writer.close_finished client_w ] >>| fun () ->
+      ssl_cleanup conn flushed
+    end ;
     return (conn, flushed, client_r, client_w)
 
-let ssl_cleanup conn _flushed =
-  Ssl.Connection.close conn ;
-  Ssl.Connection.closed conn >>= fun _ ->
-  Deferred.unit
+let connect
+    ?socket
+    ?buffer_age_limit
+    ?interrupt
+    ?reader_buffer_size
+    ?writer_buffer_size
+    ?timeout url =
+  let host = match Uri.host url with
+    | None -> invalid_arg "no host in URL"
+    | Some host -> host in
+  let port =
+    match Uri.port url, Uri_services.tcp_port_of_uri url with
+    | Some p, _ -> p
+    | None, Some p -> p
+    | _ -> invalid_arg "no port in URL" in
+  Unix.Inet_addr.of_string_or_getbyname host >>= fun inet_addr ->
+  Tcp.connect
+    ?socket ?buffer_age_limit ?interrupt ?reader_buffer_size ?writer_buffer_size ?timeout
+    (Tcp.Where_to_connect.of_inet_address (`Inet (inet_addr, port))) >>= fun (s, r, w) ->
+  begin match is_tls_url url with
+  | false -> return (s, None, r, w)
+  | true ->
+    ssl_connect r w >>= fun (conn, _flushed, r, w) ->
+    return (s, Some conn, r, w)
+  end
 
-let with_connection_uri
+let with_connection
     ?buffer_age_limit
     ?interrupt
     ?reader_buffer_size
@@ -47,10 +76,11 @@ let with_connection_uri
     (Tcp.Where_to_connect.of_inet_address (`Inet (inet_addr, port)))
     begin fun s r w ->
       match is_tls_url url with
-      | false -> f url s r w
+      | false -> f s None r w
       | true ->
-        ssl_connect r w >>= fun (conn, flushed, r, w) ->
-        Monitor.protect
-          (fun () -> f url s r w)
-          ~finally:(fun () -> ssl_cleanup conn flushed)
+        ssl_connect r w >>= fun (conn, _flushed, r, w) ->
+        Monitor.protect (fun () -> f s (Some conn) r w) ~finally:begin fun () ->
+          Reader.close r >>= fun () ->
+          Writer.close w
+        end
     end
