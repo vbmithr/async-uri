@@ -2,6 +2,10 @@ open Core
 open Async
 open Async_ssl.Std
 
+let src = Logs.Src.create "async-uri"
+module Log = (val Logs.src_log src : Logs.LOG)
+module Log_async = (val Logs_async.src_log src : Logs_async.LOG)
+
 let is_tls_url url = match Uri.scheme url with
   | Some "https"
   | Some "wss" -> true
@@ -10,19 +14,31 @@ let is_tls_url url = match Uri.scheme url with
 let ssl_cleanup conn _flushed =
   Ssl.Connection.close conn
 
-let ssl_connect r w =
+let ssl_connect ?(timeout=Time_ns.Span.of_int_sec 5) r w =
   let net_to_ssl, net_to_ssl_w = Pipe.create () in
   let ssl_to_net_r, ssl_to_net = Pipe.create () in
   don't_wait_for (Pipe.transfer_id (Reader.pipe r) net_to_ssl_w) ;
   don't_wait_for (Pipe.transfer_id ssl_to_net_r (Writer.pipe w)) ;
   let app_to_ssl, client_w = Pipe.create () in
   let client_r, ssl_to_app = Pipe.create () in
-  Ssl.client ~app_to_ssl ~ssl_to_app ~net_to_ssl ~ssl_to_net () >>= function
-  | Error e -> Error.raise e
-  | Ok conn ->
+  Clock_ns.with_timeout timeout
+    (Ssl.client ~app_to_ssl ~ssl_to_app ~net_to_ssl ~ssl_to_net ()) >>= function
+  | `Timeout -> failwith "SSL handshake timeout"
+  | `Result (Error e) -> Error.raise e
+  | `Result (Ok conn) ->
     Reader.of_pipe (Info.createf "ssl_r") client_r >>= fun client_r ->
     Writer.of_pipe (Info.createf "ssl_w") client_w >>=
     fun (client_w, `Closed_and_flushed_downstream flushed) ->
+    Monitor.detach_and_iter_errors (Writer.monitor w)
+      ~f:(Monitor.send_exn (Writer.monitor client_w)) ;
+    don't_wait_for begin
+      Reader.close_finished client_r >>= fun () ->
+      Reader.close r
+    end ;
+    don't_wait_for begin
+      Writer.close_finished client_w >>= fun () ->
+      Writer.close w
+    end ;
     don't_wait_for begin
       Deferred.all_unit [ Reader.close_finished client_r ;
                           Writer.close_finished client_w ] >>| fun () ->
@@ -50,10 +66,10 @@ let connect
     ?socket ?buffer_age_limit ?interrupt ?reader_buffer_size ?writer_buffer_size ?timeout
     (Tcp.Where_to_connect.of_inet_address (`Inet (inet_addr, port))) >>= fun (s, r, w) ->
   begin match is_tls_url url with
-  | false -> return (s, None, r, w)
-  | true ->
-    ssl_connect r w >>= fun (conn, _flushed, r, w) ->
-    return (s, Some conn, r, w)
+    | false -> return (s, None, r, w)
+    | true ->
+      ssl_connect r w >>= fun (conn, _flushed, r, w) ->
+      return (s, Some conn, r, w)
   end
 
 let with_connection
@@ -79,8 +95,9 @@ let with_connection
       | false -> f s None r w
       | true ->
         ssl_connect r w >>= fun (conn, _flushed, r, w) ->
-        Monitor.protect (fun () -> f s (Some conn) r w) ~finally:begin fun () ->
-          Reader.close r >>= fun () ->
-          Writer.close w
-        end
+        Monitor.protect (fun () -> f s (Some conn) r w)
+          ~finally:begin fun () ->
+            Reader.close r >>= fun () ->
+            Writer.close w
+          end
     end

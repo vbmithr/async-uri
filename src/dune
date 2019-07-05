@@ -2,6 +2,8 @@
  (name async_uri)
  (public_name async-uri)
  (libraries
+   logs
+   logs-async
    uri
    uri.services
    core
