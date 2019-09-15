@@ -14,15 +14,16 @@ let is_tls_url url = match Uri.scheme url with
 let ssl_cleanup conn _flushed =
   Ssl.Connection.close conn
 
-let ssl_connect ?version ?options ?(timeout=Time_ns.Span.of_int_sec 5) r w =
+let ssl_connect ?version ?options ?(timeout=Time_ns.Span.of_int_sec 5) url r w =
   let net_to_ssl, net_to_ssl_w = Pipe.create () in
   let ssl_to_net_r, ssl_to_net = Pipe.create () in
   don't_wait_for (Pipe.transfer_id (Reader.pipe r) net_to_ssl_w) ;
   don't_wait_for (Pipe.transfer_id ssl_to_net_r (Writer.pipe w)) ;
   let app_to_ssl, client_w = Pipe.create () in
   let client_r, ssl_to_app = Pipe.create () in
+  let hostname = Uri.host url in
   Clock_ns.with_timeout timeout
-    (Ssl.client ?version ?options ~app_to_ssl ~ssl_to_app ~net_to_ssl ~ssl_to_net ()) >>= function
+    (Ssl.client ?hostname ?version ?options ~app_to_ssl ~ssl_to_app ~net_to_ssl ~ssl_to_net ()) >>= function
   | `Timeout -> failwith "SSL handshake timeout"
   | `Result (Error e) -> Error.raise e
   | `Result (Ok conn) ->
@@ -70,7 +71,7 @@ let connect
   begin match is_tls_url url with
     | false -> return (s, None, r, w)
     | true ->
-      ssl_connect ?version ?options r w >>= fun (conn, _flushed, r, w) ->
+      ssl_connect ?version ?options url r w >>= fun (conn, _flushed, r, w) ->
       return (s, Some conn, r, w)
   end
 
@@ -98,7 +99,7 @@ let with_connection
       match is_tls_url url with
       | false -> f s None r w
       | true ->
-        ssl_connect ?version ?options r w >>= fun (conn, _flushed, r, w) ->
+        ssl_connect ?version ?options url r w >>= fun (conn, _flushed, r, w) ->
         Monitor.protect (fun () -> f s (Some conn) r w)
           ~finally:begin fun () ->
             Reader.close r >>= fun () ->
