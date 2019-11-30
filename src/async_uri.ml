@@ -47,6 +47,13 @@ let ssl_connect ?version ?options ?(timeout=Time_ns.Span.of_int_sec 5) url r w =
     end ;
     return (conn, flushed, client_r, client_w)
 
+let port_of_url url =
+  match Uri.port url, Uri_services.tcp_port_of_uri url, Uri.scheme url with
+  | Some p, _, _ -> p
+  | None, Some p, _ -> p
+  | None, None, Some "wss" -> 443
+  | _ -> invalid_arg "no port in URL"
+
 let connect
     ?version
     ?options
@@ -56,14 +63,8 @@ let connect
     ?reader_buffer_size
     ?writer_buffer_size
     ?timeout url =
-  let host = match Uri.host url with
-    | None -> invalid_arg "no host in URL"
-    | Some host -> host in
-  let port =
-    match Uri.port url, Uri_services.tcp_port_of_uri url with
-    | Some p, _ -> p
-    | None, Some p -> p
-    | _ -> invalid_arg "no port in URL" in
+  let host = Option.value_exn ~message:"no host in URL" (Uri.host url) in
+  let port = port_of_url url in
   Unix.Inet_addr.of_string_or_getbyname host >>= fun inet_addr ->
   Tcp.connect
     ?socket ?buffer_age_limit ?interrupt ?reader_buffer_size ?writer_buffer_size ?timeout
@@ -83,14 +84,8 @@ let with_connection
     ?reader_buffer_size
     ?writer_buffer_size
     ?timeout url f =
-  let host = match Uri.host url with
-    | None -> invalid_arg "no host in URL"
-    | Some host -> host in
-  let port =
-    match Uri.port url, Uri_services.tcp_port_of_uri url with
-    | Some p, _ -> p
-    | None, Some p -> p
-    | _ -> invalid_arg "no port in URL" in
+  let host = Option.value_exn ~message:"no host in URL" (Uri.host url) in
+  let port = port_of_url url in
   Unix.Inet_addr.of_string_or_getbyname host >>= fun inet_addr ->
   Tcp.with_connection
     ?buffer_age_limit ?interrupt ?reader_buffer_size ?writer_buffer_size ?timeout
