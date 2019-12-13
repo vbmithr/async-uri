@@ -101,3 +101,39 @@ let with_connection
             Writer.close w
           end
     end
+
+let listen_ssl
+    ?buffer_age_limit ?max_connections
+    ?max_accepts_per_batch
+    ?backlog ?socket
+    ?version ?options ?name ?allowed_ciphers
+    ?ca_file ?ca_path ?verify_modes
+    ~crt_file ~key_file
+    ~on_handler_error listen_on f =
+  Tcp.Server.create
+    ?buffer_age_limit ?max_connections
+    ?max_accepts_per_batch
+    ?backlog ?socket ~on_handler_error listen_on begin fun s r w ->
+    let ssl_to_net = Writer.pipe w in
+    let net_to_ssl = Reader.pipe r in
+    let app_to_ssl, client_write = Pipe.create () in
+    let client_read, ssl_to_app = Pipe.create () in
+    Reader.of_pipe
+      (Info.of_string "read_pipe") client_read >>= fun r ->
+    Writer.of_pipe
+      (Info.of_string "writer_pipe") client_write >>= fun (w, _) ->
+    Monitor.protect begin fun () ->
+      Ssl.server ?version ?options ?name ?allowed_ciphers
+        ?ca_file ?ca_path ~crt_file ~key_file ?verify_modes
+        ~ssl_to_net ~net_to_ssl ~app_to_ssl ~ssl_to_app () >>= function
+      | Error e -> Logs_async.err (fun m -> m "%a" Error.pp e)
+      | Ok c -> f s c r w
+    end ~finally:begin fun () ->
+      Pipe.close ssl_to_net ;
+      Pipe.close_read net_to_ssl ;
+      Pipe.close_read app_to_ssl ;
+      Pipe.close_read client_read ;
+      Reader.close r >>= fun () ->
+      Writer.close w
+    end
+  end
