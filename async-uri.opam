@@ -1,0 +1,20 @@
+opam-version: "2.0"
+authors: "Vincent Bernardoff <vb@luminar.eu.org>"
+maintainer: "Vincent Bernardoff <vb@luminar.eu.org>"
+homepage: "https://github.com/vbmithr/async-uri"
+bug-reports: "https://github.com/vbmithr/async-uri/issues"
+dev-repo: "git+https://github.com/vbmithr/async-uri"
+doc: "https://vbmithr.github.io/async-uri/doc"
+build: [ "dune" "build" "-j" jobs "-p" name ]
+depends: [
+  "dune" {>= "1.11.4"}
+  "core" {>= "v0.12.0"}
+  "async" {>= "v0.12.0"}
+  "async_ssl" {>= "v0.12.0"}
+  "uri" {>= "3.1.0"}
+  "logs" {>= "0.7.0"}
+  "logs-async" {= version}
+]
+synopsis: "Open connections from URLs with Async."
+description: """
+"""
