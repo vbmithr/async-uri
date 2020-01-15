@@ -6,6 +6,7 @@ bug-reports: "https://github.com/vbmithr/async-uri/issues"
 dev-repo: "git+https://github.com/vbmithr/async-uri"
 doc: "https://vbmithr.github.io/async-uri/doc"
 build: [ "dune" "build" "-j" jobs "-p" name ]
+run-test: [ "dune" "runtest" "-j" jobs "-p" name ]
 depends: [
   "dune" {>= "1.11.4"}
   "core" {>= "v0.12.0"}
@@ -15,6 +16,6 @@ depends: [
   "logs" {>= "0.7.0"}
   "logs-async" {= version}
 ]
-synopsis: "Open connections from URLs with Async."
+synopsis: "Open connections from URLs with Async"
 description: """
 """
