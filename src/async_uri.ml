@@ -2,10 +2,6 @@ open Core
 open Async
 open Async_ssl.Std
 
-let src = Logs.Src.create "async-uri"
-module Log = (val Logs.src_log src : Logs.LOG)
-module Log_async = (val Logs_async.src_log src : Logs_async.LOG)
-
 let is_tls_url url = match Uri.scheme url with
   | Some "https"
   | Some "wss" -> true
@@ -125,9 +121,8 @@ let listen_ssl
     Monitor.protect begin fun () ->
       Ssl.server ?version ?options ?name ?allowed_ciphers
         ?ca_file ?ca_path ~crt_file ~key_file ?verify_modes
-        ~ssl_to_net ~net_to_ssl ~app_to_ssl ~ssl_to_app () >>= function
-      | Error e -> Logs_async.err (fun m -> m "%a" Error.pp e)
-      | Ok c -> f s c r w
+        ~ssl_to_net ~net_to_ssl ~app_to_ssl ~ssl_to_app () |>
+      Deferred.Or_error.ok_exn >>= fun c -> f s c r w
     end ~finally:begin fun () ->
       Pipe.close ssl_to_net ;
       Pipe.close_read net_to_ssl ;
