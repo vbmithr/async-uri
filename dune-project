@@ -1,2 +1,2 @@
-(lang dune 1.9)
-(name httpaf-extra)
+(lang dune 1.11)
+(name async-uri)
