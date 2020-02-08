@@ -1,25 +1,29 @@
 open Async
 open Async_ssl.Std
 
+type t = {
+  s: ([ `Active ], Socket.Address.Inet.t) Socket.t ;
+  ssl: Ssl.Connection.t option ;
+  r: Reader.t;
+  w: Writer.t
+}
+
 val is_tls_url : Uri.t -> bool
 
 val connect :
   ?version:Async_ssl.Version.t ->
   ?options:Async_ssl.Opt.t list ->
   ?socket:([ `Unconnected ], Socket.Address.Inet.t) Socket.t ->
-  (Uri.t ->
-   (([ `Active ], Socket.Address.Inet.t) Socket.t *
-    Ssl.Connection.t option * Reader.t * Writer.t) Deferred.t)
-    Tcp.with_connect_options
+  (Uri.t -> t Deferred.t) Tcp.with_connect_options
 
 val with_connection :
   ?version:Async_ssl.Version.t ->
   ?options:Async_ssl.Opt.t list ->
-  (Uri.t ->
-   ((([ `Active ], Socket.Address.Inet.t) Socket.t ->
-     Ssl.Connection.t option ->
-     Reader.t -> Writer.t -> 'a Deferred.t) ->
-    'a Deferred.t)) Tcp.with_connect_options
+  (Uri.t -> (t -> 'a Deferred.t) -> 'a Deferred.t) Tcp.with_connect_options
+
+module Persistent : Persistent_connection_kernel.S
+  with type conn := t
+   and type address = Uri.t
 
 val listen_ssl :
   ?buffer_age_limit:Writer.buffer_age_limit ->

@@ -43,6 +43,29 @@ let ssl_connect ?version ?options ?(timeout=Time_ns.Span.of_int_sec 5) url r w =
     end ;
     return (conn, flushed, client_r, client_w)
 
+module T = struct
+  module Address = Uri_sexp
+  type t = {
+    s: ([ `Active ], Socket.Address.Inet.t) Socket.t ;
+    ssl: Ssl.Connection.t option ;
+    r: Reader.t;
+    w: Writer.t
+  }
+
+  let create ?ssl s r w = { s; ssl; r; w }
+
+  let close { ssl; r; w; _ } =
+    Option.iter ~f:Ssl.Connection.close ssl ;
+    Writer.close w >>= fun () ->
+    Reader.close r
+
+  let close_finished { r; _ } = Reader.close_finished r
+  let is_closed { r; _ } = Reader.is_closed r
+end
+
+include T
+module Persistent = Persistent_connection_kernel.Make(T)
+
 let port_of_url url =
   match Uri.port url, Uri_services.tcp_port_of_uri url, Uri.scheme url with
   | Some p, _, _ -> p
@@ -66,10 +89,10 @@ let connect
     ?socket ?buffer_age_limit ?interrupt ?reader_buffer_size ?writer_buffer_size ?timeout
     (Tcp.Where_to_connect.of_inet_address (`Inet (inet_addr, port))) >>= fun (s, r, w) ->
   begin match is_tls_url url with
-    | false -> return (s, None, r, w)
+    | false -> return (create s r w)
     | true ->
-      ssl_connect ?version ?options url r w >>= fun (conn, _flushed, r, w) ->
-      return (s, Some conn, r, w)
+      ssl_connect ?version ?options url r w >>= fun (ssl, _flushed, r, w) ->
+      return (create ~ssl s r w)
   end
 
 let with_connection
@@ -88,10 +111,10 @@ let with_connection
     (Tcp.Where_to_connect.of_inet_address (`Inet (inet_addr, port)))
     begin fun s r w ->
       match is_tls_url url with
-      | false -> f s None r w
+      | false -> f (create s r w)
       | true ->
-        ssl_connect ?version ?options url r w >>= fun (conn, _flushed, r, w) ->
-        Monitor.protect (fun () -> f s (Some conn) r w)
+        ssl_connect ?version ?options url r w >>= fun (ssl, _flushed, r, w) ->
+        Monitor.protect (fun () -> f (create ~ssl s r w))
           ~finally:begin fun () ->
             Reader.close r >>= fun () ->
             Writer.close w
