@@ -122,12 +122,12 @@ let with_connection
     end
 
 let listen_ssl
-    ?buffer_age_limit ?max_connections
-    ?max_accepts_per_batch
-    ?backlog ?socket
     ?version ?options ?name ?allowed_ciphers
     ?ca_file ?ca_path ?verify_modes
     ~crt_file ~key_file
+    ?buffer_age_limit ?max_connections
+    ?max_accepts_per_batch
+    ?backlog ?socket
     ~on_handler_error listen_on f =
   Tcp.Server.create
     ?buffer_age_limit ?max_connections

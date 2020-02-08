@@ -26,11 +26,6 @@ module Persistent : Persistent_connection_kernel.S
    and type address = Uri.t
 
 val listen_ssl :
-  ?buffer_age_limit:Writer.buffer_age_limit ->
-  ?max_connections:int ->
-  ?max_accepts_per_batch:int ->
-  ?backlog:int ->
-  ?socket:([ `Unconnected ], [< Socket.Address.t ] as 'a) Socket.t ->
   ?version:Async_ssl.Version.t ->
   ?options:Async_ssl.Opt.t list ->
   ?name:string ->
@@ -40,8 +35,7 @@ val listen_ssl :
   ?verify_modes:Async_ssl.Verify_mode.t list ->
   crt_file:string ->
   key_file:string ->
-  on_handler_error:[ `Call of 'a -> exn -> unit | `Ignore | `Raise ] ->
-  ('a, 'b) Tcp.Where_to_listen.t ->
-  ('a ->
-   Ssl.Connection.t -> Reader.t -> Writer.t -> unit Deferred.t) ->
-  ('a, 'b) Tcp.Server.t Deferred.t
+  ?buffer_age_limit:Writer.buffer_age_limit ->
+  ([< Socket.Address.t ] as 'a, 'listening_on,
+   'a -> Ssl.Connection.t -> Reader.t -> Writer.t -> unit Deferred.t)
+    Async.Tcp.Server.create_options
