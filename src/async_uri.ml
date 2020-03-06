@@ -85,7 +85,7 @@ let connect ?version ?options ?socket ?buffer_age_limit ?interrupt
       return (create ~ssl s r w)
 
 let with_connection ?version ?options ?buffer_age_limit ?interrupt
-    ?reader_buffer_size ?writer_buffer_size ?timeout url f =
+    ?reader_buffer_size ?writer_buffer_size ?timeout ~url ~f () =
   let host = Option.value_exn ~message:"no host in URL" (Uri.host url) in
   let port = port_of_url url in
   Unix.Inet_addr.of_string_or_getbyname host >>= fun inet_addr ->

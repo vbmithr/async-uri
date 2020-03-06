@@ -19,7 +19,8 @@ val connect :
 val with_connection :
   ?version:Async_ssl.Version.t ->
   ?options:Async_ssl.Opt.t list ->
-  (Uri.t -> (t -> 'a Deferred.t) -> 'a Deferred.t) Tcp.with_connect_options
+  (url:Uri.t -> f:(t -> 'a Deferred.t) -> unit -> 'a Deferred.t)
+  Tcp.with_connect_options
 
 module Persistent :
   Persistent_connection_kernel.S with type conn := t and type address = Uri.t
