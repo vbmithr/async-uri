@@ -9,6 +9,8 @@ type t = {
 }
 
 val is_tls_url : Uri.t -> bool
+(** [is_tls_url url] is [true] iff [url] is recognized as TLS enabled
+    (https, wss, …). *)
 
 val connect :
   ?version:Async_ssl.Version.t ->

@@ -16,6 +16,6 @@ depends: [
   "async_ssl" {>= "v0.13.0"}
 ]
 synopsis: "Open Async (TLS) TCP connections with Uri.t"
-description: """Simple wrapper to the Async's Tcp module to
-open connections from URLs. If the URL scheme is detected to require
-TLS, TLS will be used."""
+description: """Simple wrapper to the Async's Tcp module to open
+connections from URLs. If the URL scheme is detected to require TLS,
+TLS will be used."""
