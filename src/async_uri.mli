@@ -36,7 +36,11 @@ val listen_ssl :
   crt_file:string ->
   key_file:string ->
   ?buffer_age_limit:Writer.buffer_age_limit ->
-  ( ([< Socket.Address.t ] as 'a),
-    'listening_on,
-    'a -> Ssl.Connection.t -> Reader.t -> Writer.t -> unit Deferred.t )
-  Async.Tcp.Server.create_options
+  ?max_connections:int ->
+  ?max_accepts_per_batch:int ->
+  ?backlog:int ->
+  ?socket:([ `Unconnected ], [< Socket.Address.t ] as 'a) Socket.t ->
+  on_handler_error:[ `Call of 'a -> exn -> unit | `Ignore | `Raise ] ->
+  ('a, 'b) Tcp.Where_to_listen.t ->
+  ('a -> Ssl.Connection.t -> Reader.t -> Writer.t -> unit Deferred.t) ->
+  ('a, 'b) Tcp.Server.t Deferred.t
