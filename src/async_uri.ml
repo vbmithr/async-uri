@@ -5,14 +5,12 @@ open Async_ssl.Std
 let is_tls_url url =
   match Uri.scheme url with Some "https" | Some "wss" -> true | _ -> false
 
-let ssl_cleanup conn _flushed = Ssl.Connection.close conn
-
 let ssl_connect ?version ?options ?(timeout = Time_ns.Span.of_int_sec 5) url r w
     =
-  let net_to_ssl, net_to_ssl_w = Pipe.create () in
-  let ssl_to_net_r, ssl_to_net = Pipe.create () in
-  don't_wait_for (Pipe.transfer_id (Reader.pipe r) net_to_ssl_w);
-  don't_wait_for (Pipe.transfer_id ssl_to_net_r (Writer.pipe w));
+  let net_to_ssl = Reader.pipe r in
+  let ssl_to_net =
+    Pipe.create_writer (fun r -> Pipe.transfer_id r (Writer.pipe w))
+  in
   let app_to_ssl, client_w = Pipe.create () in
   let client_r, ssl_to_app = Pipe.create () in
   let hostname = Uri.host url in
@@ -35,7 +33,7 @@ let ssl_connect ?version ?options ?(timeout = Time_ns.Span.of_int_sec 5) url r w
       don't_wait_for
         ( Deferred.all_unit
             [ Reader.close_finished client_r; Writer.close_finished client_w ]
-        >>| fun () -> ssl_cleanup conn flushed );
+        >>| fun () -> Ssl.Connection.close conn );
       return (conn, flushed, client_r, client_w)
 
 module T = struct
