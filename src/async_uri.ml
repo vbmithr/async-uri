@@ -83,7 +83,7 @@ let connect ?version ?options ?socket ?buffer_age_limit ?interrupt
       return (create ~ssl s r w)
 
 let with_connection ?version ?options ?buffer_age_limit ?interrupt
-    ?reader_buffer_size ?writer_buffer_size ?timeout ~url ~f () =
+    ?reader_buffer_size ?writer_buffer_size ?timeout url f =
   let host = Option.value_exn ~message:"no host in URL" (Uri.host url) in
   let port = port_of_url url in
   Unix.Inet_addr.of_string_or_getbyname host >>= fun inet_addr ->
@@ -97,7 +97,7 @@ let with_connection ?version ?options ?buffer_age_limit ?interrupt
           ssl_connect ?version ?options url r w >>= fun (ssl, _flushed, r, w) ->
           Monitor.protect
             (fun () -> f (create ~ssl s r w))
-            ~finally:(fun () -> Reader.close r >>= fun () -> Writer.close w))
+            ~finally:(fun () -> Reader.close r >>= fun () -> Writer.close w) )
 
 let listen_ssl ?version ?options ?name ?allowed_ciphers ?ca_file ?ca_path
     ?verify_modes ~crt_file ~key_file ?buffer_age_limit ?max_connections
@@ -117,10 +117,10 @@ let listen_ssl ?version ?options ?name ?allowed_ciphers ?ca_file ?ca_path
             ~crt_file ~key_file ?verify_modes ~ssl_to_net ~net_to_ssl
             ~app_to_ssl ~ssl_to_app ()
           |> Deferred.Or_error.ok_exn
-          >>= fun c -> f s c r w)
+          >>= fun c -> f s c r w )
         ~finally:(fun () ->
           Pipe.close ssl_to_net;
           Pipe.close_read net_to_ssl;
           Pipe.close_read app_to_ssl;
           Pipe.close_read client_read;
-          Reader.close r >>= fun () -> Writer.close w))
+          Reader.close r >>= fun () -> Writer.close w ) )

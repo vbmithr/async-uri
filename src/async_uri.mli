@@ -19,8 +19,7 @@ val connect :
 val with_connection :
   ?version:Async_ssl.Version.t ->
   ?options:Async_ssl.Opt.t list ->
-  (url:Uri.t -> f:(t -> 'a Deferred.t) -> unit -> 'a Deferred.t)
-  Tcp.with_connect_options
+  (Uri.t -> (t -> 'a Deferred.t) -> 'a Deferred.t) Tcp.with_connect_options
 
 module Persistent :
   Persistent_connection_kernel.S with type conn := t and type address = Uri.t
@@ -39,7 +38,7 @@ val listen_ssl :
   ?max_connections:int ->
   ?max_accepts_per_batch:int ->
   ?backlog:int ->
-  ?socket:([ `Unconnected ], [< Socket.Address.t ] as 'a) Socket.t ->
+  ?socket:([ `Unconnected ], ([< Socket.Address.t ] as 'a)) Socket.t ->
   on_handler_error:[ `Call of 'a -> exn -> unit | `Ignore | `Raise ] ->
   ('a, 'b) Tcp.Where_to_listen.t ->
   ('a -> Ssl.Connection.t -> Reader.t -> Writer.t -> unit Deferred.t) ->
