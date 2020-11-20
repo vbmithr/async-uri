@@ -5,7 +5,6 @@ script:
 - bash -ex .travis-opam.sh
 env:
   matrix:
-    - OCAML_VERSION="4.08" PACKAGE="async-uri"
-    - OCAML_VERSION="4.09" PACKAGE="async-uri"
+    - OCAML_VERSION="4.11" PACKAGE="async-uri"
 os:
 - linux
