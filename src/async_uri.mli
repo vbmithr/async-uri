@@ -14,25 +14,14 @@ val connect :
   ?version:Async_ssl.Version.t ->
   ?options:Async_ssl.Opt.t list ->
   ?socket:([ `Unconnected ], Socket.Address.Inet.t) Socket.t ->
-  ?buffer_age_limit:[ `At_most of Time_unix.Span.t | `Unlimited ] ->
-  ?interrupt:unit Deferred.t ->
-  ?reader_buffer_size:int ->
-  ?writer_buffer_size:int ->
-  ?timeout:Time_unix.Span.t ->
-  Uri.t -> t Deferred.t
+  (Uri.t -> t Deferred.t) Tcp.with_connect_options
 
 val with_connection :
   ?version:Async_ssl.Version.t ->
   ?options:Async_ssl.Opt.t list ->
-  ?buffer_age_limit:[ `At_most of Time_unix.Span.t | `Unlimited ] ->
-  ?interrupt:unit Deferred.t ->
-  ?reader_buffer_size:int ->
-  ?writer_buffer_size:int ->
-  ?timeout:Time_unix.Span.t ->
-  Uri.t -> (t -> 'a Deferred.t) -> 'a Deferred.t
+  (Uri.t -> (t -> 'a Deferred.t) -> 'a Deferred.t) Tcp.with_connect_options
 
-module Persistent :
-  Persistent_connection_kernel.S with type conn := t
+module Persistent : Persistent_connection_kernel.S with type conn := t
 
 val listen_ssl :
   ?version:Async_ssl.Version.t ->
