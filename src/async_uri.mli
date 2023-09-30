@@ -19,7 +19,8 @@ val connect :
   ?reader_buffer_size:int ->
   ?writer_buffer_size:int ->
   ?timeout:Time_unix.Span.t ->
-  Uri.t -> t Deferred.t
+  Uri.t ->
+  t Deferred.t
 
 val with_connection :
   ?version:Async_ssl.Version.t ->
@@ -29,10 +30,11 @@ val with_connection :
   ?reader_buffer_size:int ->
   ?writer_buffer_size:int ->
   ?timeout:Time_unix.Span.t ->
-  Uri.t -> (t -> 'a Deferred.t) -> 'a Deferred.t
+  Uri.t ->
+  (t -> 'a Deferred.t) ->
+  'a Deferred.t
 
-module Persistent :
-  Persistent_connection_kernel.S with type conn := t
+module Persistent : Persistent_connection_kernel.S with type conn := t
 
 val listen_ssl :
   ?version:Async_ssl.Version.t ->
