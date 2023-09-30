@@ -5,5 +5,6 @@
    uri-sexp
    uri.services
    core
+   core_unix.time_float_unix
    async
    async_ssl))
