@@ -13,7 +13,7 @@
 
 (license ISC)
 
-(documentation https://github.com/vbmithr/async-uri)
+(documentation https://vbmithr.github.io/async-uri)
 
 (package
  (name async-uri)
@@ -25,9 +25,9 @@ TLS, TLS will be used.")
    ocaml
    dune
    uri-sexp
-  (core (>= 0.16))
-  (async (>= 0.16))
-  (async_ssl (>= 0.16)))
+  (core (>= v0.16))
+  (async (>= v0.16))
+  (async_ssl (>= v0.16)))
  (tags
   (async uri tls ssl)))
 

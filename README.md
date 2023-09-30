@@ -1,4 +1,4 @@
-# async-uri [![Build Status](https://api.travis-ci.com/vbmithr/async-uri.svg?branch=master)](https://travis-ci.com/github/vbmithr/async-uri)
+# async-uri
 
 ## Introduction
 
