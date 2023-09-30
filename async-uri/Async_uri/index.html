@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Async_uri (async-uri.Async_uri)</title><link rel="stylesheet" href="../../odoc.support/odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.2.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../index.html">async-uri</a> &#x00BB; Async_uri</nav><header class="odoc-preamble"><h1>Module <code><span>Async_uri</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec type anchored" id="type-t"><a href="#type-t" class="anchor"></a><code><span><span class="keyword">type</span> t</span><span> = </span><span>{</span></code><ol><li id="type-t.s" class="def record field anchored"><a href="#type-t.s" class="anchor"></a><code><span>s : <span><span>(<span>[ `Active ]</span>, <span class="xref-unresolved">Async</span>.Socket.Address.Inet.t)</span> <span class="xref-unresolved">Async</span>.Socket.t</span>;</span></code></li><li id="type-t.ssl" class="def record field anchored"><a href="#type-t.ssl" class="anchor"></a><code><span>ssl : <span><span class="xref-unresolved">Async_ssl</span>.Std.Ssl.Connection.t option</span>;</span></code></li><li id="type-t.r" class="def record field anchored"><a href="#type-t.r" class="anchor"></a><code><span>r : <span class="xref-unresolved">Async</span>.Reader.t;</span></code></li><li id="type-t.w" class="def record field anchored"><a href="#type-t.w" class="anchor"></a><code><span>w : <span class="xref-unresolved">Async</span>.Writer.t;</span></code></li></ol><code><span>}</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-is_tls_url"><a href="#val-is_tls_url" class="anchor"></a><code><span><span class="keyword">val</span> is_tls_url : <span><span class="xref-unresolved">Uri</span>.t <span class="arrow">&#45;&gt;</span></span> bool</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-connect"><a href="#val-connect" class="anchor"></a><code><span><span class="keyword">val</span> connect : 
+  <span>?version:<span class="xref-unresolved">Async_ssl</span>.Version.t <span class="arrow">&#45;&gt;</span></span>
+  <span>?options:<span><span class="xref-unresolved">Async_ssl</span>.Opt.t list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?socket:<span><span>(<span>[ `Unconnected ]</span>, <span class="xref-unresolved">Async</span>.Socket.Address.Inet.t)</span> <span class="xref-unresolved">Async</span>.Socket.t</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?buffer_age_limit:<span>[ <span>`At_most of <span class="xref-unresolved">Core</span>.Time_float.Span.t</span> <span>| `Unlimited</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?interrupt:<span>unit <span class="xref-unresolved">Async</span>.Deferred.t</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?reader_buffer_size:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?writer_buffer_size:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?timeout:<span class="xref-unresolved">Core</span>.Time_float.Span.t <span class="arrow">&#45;&gt;</span></span>
+  <span>?time_source:<span class="xref-unresolved">Async</span>.Time_source.t <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="xref-unresolved">Uri</span>.t <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="xref-unresolved">Async</span>.Deferred.t</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_connection"><a href="#val-with_connection" class="anchor"></a><code><span><span class="keyword">val</span> with_connection : 
+  <span>?version:<span class="xref-unresolved">Async_ssl</span>.Version.t <span class="arrow">&#45;&gt;</span></span>
+  <span>?options:<span><span class="xref-unresolved">Async_ssl</span>.Opt.t list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?buffer_age_limit:<span>[ <span>`At_most of <span class="xref-unresolved">Core</span>.Time_float.Span.t</span> <span>| `Unlimited</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?interrupt:<span>unit <span class="xref-unresolved">Async</span>.Deferred.t</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?reader_buffer_size:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?writer_buffer_size:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?timeout:<span class="xref-unresolved">Core</span>.Time_float.Span.t <span class="arrow">&#45;&gt;</span></span>
+  <span>?time_source:<span class="xref-unresolved">Async</span>.Time_source.t <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="xref-unresolved">Uri</span>.t <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <span class="xref-unresolved">Async</span>.Deferred.t</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'a</span> <span class="xref-unresolved">Async</span>.Deferred.t</span></span></code></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-Persistent"><a href="#module-Persistent" class="anchor"></a><code><span><span class="keyword">module</span> Persistent</span><span> : <span class="xref-unresolved">Persistent_connection_kernel</span>.S <span class="keyword">with</span> <span><span class="keyword">type</span> <span class="xref-unresolved">conn</span> := <span class="xref-unresolved">t</span></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-listen_ssl"><a href="#val-listen_ssl" class="anchor"></a><code><span><span class="keyword">val</span> listen_ssl : 
+  <span>?version:<span class="xref-unresolved">Async_ssl</span>.Version.t <span class="arrow">&#45;&gt;</span></span>
+  <span>?options:<span><span class="xref-unresolved">Async_ssl</span>.Opt.t list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?allowed_ciphers:<span>[ <span>`Only of <span>string list</span></span> <span>| `Openssl_default</span> <span>| `Secure</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?ca_file:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?ca_path:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?verify_modes:<span><span class="xref-unresolved">Async_ssl</span>.Verify_mode.t list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>crt_file:string <span class="arrow">&#45;&gt;</span></span>
+  <span>key_file:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?buffer_age_limit:<span class="xref-unresolved">Async</span>.Writer.buffer_age_limit <span class="arrow">&#45;&gt;</span></span>
+  <span>?max_connections:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?max_accepts_per_batch:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?backlog:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?socket:<span><span>(<span>[ `Unconnected ]</span>, <span>[&lt; <span class="xref-unresolved">Async</span>.Socket.Address.t ]</span> <span class="keyword">as</span> 'a)</span> <span class="xref-unresolved">Async</span>.Socket.t</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>on_handler_error:<span>[ <span>`Call of <span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span>exn <span class="arrow">&#45;&gt;</span></span> unit</span> <span>| `Ignore</span> <span>| `Raise</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<span class="type-var">'a</span>, <span class="type-var">'b</span>)</span> <span class="xref-unresolved">Async</span>.Tcp.Where_to_listen.t</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span>
+    <span><span class="xref-unresolved">Async_ssl</span>.Std.Ssl.Connection.t <span class="arrow">&#45;&gt;</span></span>
+    <span><span class="xref-unresolved">Async</span>.Reader.t <span class="arrow">&#45;&gt;</span></span>
+    <span><span class="xref-unresolved">Async</span>.Writer.t <span class="arrow">&#45;&gt;</span></span>
+    <span>unit <span class="xref-unresolved">Async</span>.Deferred.t</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<span class="type-var">'a</span>, <span class="type-var">'b</span>)</span> <span class="xref-unresolved">Async</span>.Tcp.Server.t</span> <span class="xref-unresolved">Async</span>.Deferred.t</span></span></code></div></div></div></body></html>
