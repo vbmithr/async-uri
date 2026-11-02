@@ -1,9 +1,6 @@
 (library
  (name async_uri)
  (public_name async-uri)
- (libraries
-   uri-sexp
-   uri.services
-   core
-   async
-   async_ssl))
+ (preprocess
+  (pps ppx_jane))
+ (libraries logs uri-sexp uri.services core async async_ssl))

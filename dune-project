@@ -22,12 +22,17 @@
 open connections from URLs. If the URL scheme is detected to require
 TLS, TLS will be used.")
  (depends
-   ocaml
-   dune
-   uri-sexp
-  (core (>= v0.16))
-  (async (>= v0.16))
-  (async_ssl (>= v0.16)))
+  ocaml
+  dune
+  logs
+  ppx_jane
+  uri
+  uri-sexp
+  (core (>= v0.17))
+  (async (>= v0.17))
+  (async_ssl (>= v0.17))
+  (alcotest :with-test)
+  (alcotest-async :with-test))
  (tags
   (async uri tls ssl)))
 

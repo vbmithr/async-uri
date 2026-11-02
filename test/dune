@@ -1,0 +1,6 @@
+(test
+ (name test_async_uri)
+ (deps ca.pem localhost.pem localhost.key wrong.pem wrong.key)
+ (preprocess
+  (pps ppx_jane))
+ (libraries core async alcotest alcotest-async async-uri))

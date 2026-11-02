@@ -1,3 +1,15 @@
+Unreleased
+----------
+
+- Close the transport when a TLS handshake times out or fails.
+- Verify that the server certificate names the URL's host; refuse a TLS URL
+  with no host. Add `?ca_file` to `connect` and `with_connection`.
+- `?timeout` of `connect` and `with_connection` is now a `Time_ns.Span.t`, and
+  also bounds the TLS handshake.
+- `with_connection` resolves the host through `Tcp.Where_to_connect`.
+- Add `connect_rpc`.
+- Update to async v0.17.
+
 0.4.0 2023-09-30 Paris
 ----------------------
 
