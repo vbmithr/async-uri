@@ -8,6 +8,8 @@ Unreleased
   also bounds the TLS handshake.
 - `with_connection` resolves the host through `Tcp.Where_to_connect`.
 - Add `connect_rpc`.
+- Do not leave a handler on `?interrupt` per successful connection, which a
+  long-lived interrupt retained until it was determined.
 - Update to async v0.17.
 
 0.4.0 2023-09-30 Paris

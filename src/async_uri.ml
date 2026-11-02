@@ -99,6 +99,18 @@ let port_of_url url =
   | None, None, Some "wss" -> 443
   | _ -> invalid_arg "no port in URL"
 
+(* [Tcp] races [interrupt] against its connect timeout. A successful connect
+   aborts the timeout, which leaves that race pending for as long as [interrupt]
+   is, with its handler still registered: nothing for a short-lived interrupt,
+   one retained closure chain per connection for a process-lifetime one. Only
+   connecting is interruptible, so [Tcp] gets a deferred that ends with it. *)
+let scoped_interrupt = function
+  | None -> (None, Fn.id)
+  | Some interrupt ->
+      let connected = Ivar.create () in
+      ( Some (Deferred.any [ interrupt; Ivar.read connected ]),
+        fun () -> Ivar.fill_if_empty connected () )
+
 let connect ?version ?options ?ca_file ?socket ?buffer_age_limit ?interrupt
     ?reader_buffer_size ?writer_buffer_size ?timeout ?time_source url =
   let host = Option.value_exn ~message:"no host in URL" (Uri.host url) in
@@ -107,9 +119,15 @@ let connect ?version ?options ?ca_file ?socket ?buffer_age_limit ?interrupt
     Option.map timeout ~f:Time_ns.Span.to_span_float_round_nearest
   in
   Unix.Inet_addr.of_string_or_getbyname host >>= fun inet_addr ->
-  Tcp.connect ?socket ?buffer_age_limit ?interrupt ?reader_buffer_size
-    ?writer_buffer_size ?timeout:timeout_float ?time_source
-    (Tcp.Where_to_connect.of_inet_address (`Inet (inet_addr, port)))
+  let interrupt, release = scoped_interrupt interrupt in
+  Monitor.protect
+    (fun () ->
+      Tcp.connect ?socket ?buffer_age_limit ?interrupt ?reader_buffer_size
+        ?writer_buffer_size ?timeout:timeout_float ?time_source
+        (Tcp.Where_to_connect.of_inet_address (`Inet (inet_addr, port))))
+    ~finally:(fun () ->
+      release ();
+      Deferred.unit)
   >>= fun (s, r, w) ->
   match is_tls_url url with
   | false -> return (create s r w)
@@ -127,21 +145,28 @@ let with_connection ?version ?options ?ca_file ?buffer_age_limit ?interrupt
   let hp =
     Tcp.Where_to_connect.of_host_and_port (Host_and_port.create ~host ~port)
   in
-  Tcp.with_connection ?buffer_age_limit ?interrupt ?reader_buffer_size
-    ?writer_buffer_size ?timeout:timeout_float ?time_source hp (fun s r w ->
-      match is_tls_url url with
-      | false -> f (create s r w)
-      | true ->
-          ssl_connect ?version ?options ?ca_file ?timeout url r w
-          >>= fun (ssl, _flushed, r, w) ->
-          Monitor.protect
-            (fun () -> f (create ~ssl s r w))
-            ~finally:(fun () ->
-              (* Do not wait for close to be finished, writer inner
-                 monitor could be stuck etc. *)
-              don't_wait_for (Reader.close r);
-              don't_wait_for (Writer.close w);
-              Deferred.unit))
+  let interrupt, release = scoped_interrupt interrupt in
+  Monitor.protect
+    (fun () ->
+      Tcp.with_connection ?buffer_age_limit ?interrupt ?reader_buffer_size
+        ?writer_buffer_size ?timeout:timeout_float ?time_source hp (fun s r w ->
+          release ();
+          match is_tls_url url with
+          | false -> f (create s r w)
+          | true ->
+              ssl_connect ?version ?options ?ca_file ?timeout url r w
+              >>= fun (ssl, _flushed, r, w) ->
+              Monitor.protect
+                (fun () -> f (create ~ssl s r w))
+                ~finally:(fun () ->
+                  (* Do not wait for close to be finished, writer inner
+                     monitor could be stuck etc. *)
+                  don't_wait_for (Reader.close r);
+                  don't_wait_for (Writer.close w);
+                  Deferred.unit)))
+    ~finally:(fun () ->
+      release ();
+      Deferred.unit)
 
 let listen_ssl ?version ?options ?name ?allowed_ciphers ?ca_file ?ca_path
     ?verify_modes ~crt_file ~key_file ?buffer_age_limit ?max_connections
